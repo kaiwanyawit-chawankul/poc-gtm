@@ -1,6 +1,10 @@
+const fs = require('fs');
+const path = require('path');
 const { chromium } = require('playwright');
 
 const baseUrl = 'https://poc-gtm-nu.vercel.app';
+const screenshotsDir = path.join(__dirname, 'screenshots');
+fs.mkdirSync(screenshotsDir, { recursive: true });
 
 const personas = [
   {
@@ -83,7 +87,12 @@ async function think(persona, label) {
   await new Promise(resolve => setTimeout(resolve, persona.thinkTimeMs || 1500));
 }
 
-async function simulateUser(persona) {
+async function simulateUser(persona, startDelayMs = 0) {
+  if (startDelayMs > 0) {
+    console.log(`[${persona.id}] Arriving after ${startDelayMs}ms`);
+    await new Promise(resolve => setTimeout(resolve, startDelayMs));
+  }
+
   const browser = await chromium.launch({
     headless: true,
     slowMo: 200
@@ -159,10 +168,10 @@ async function simulateUser(persona) {
     console.log(`[${persona.id}] Transaction ID: ${transactionId}`);
 
     console.log(`[${persona.id}] Saving screenshot`);
-    await page.screenshot({ path: `screenshots/checkout_simulation_${persona.id}.png`, fullPage: true });
+    await page.screenshot({ path: path.join(screenshotsDir, `checkout_simulation_${persona.id}.png`), fullPage: true });
   } catch (error) {
     console.error(`[${persona.id}] Simulation failed:`, error);
-    await page.screenshot({ path: `screenshots/simulation_error_${persona.id}.png`, fullPage: true });
+    await page.screenshot({ path: path.join(screenshotsDir, `simulation_error_${persona.id}.png`), fullPage: true });
   } finally {
     await page.waitForTimeout(1000);
     await context.close();
@@ -172,7 +181,11 @@ async function simulateUser(persona) {
 }
 
 (async () => {
-  const randomizedPersonas = shuffle(personas);
-  await Promise.all(randomizedPersonas.map(persona => simulateUser(persona)));
-  console.log('All personas completed');
+  const dailyVisitCount = 4 + Math.floor(Math.random() * 17);
+  const selectedPersonas = shuffle(personas).slice(0, dailyVisitCount);
+  const arrivalOffsets = selectedPersonas.map(() => Math.floor(Math.random() * 8000));
+
+  console.log(`Simulating a daily traffic load of ${selectedPersonas.length} visitors`);
+  await Promise.all(selectedPersonas.map((persona, index) => simulateUser(persona, arrivalOffsets[index])));
+  console.log(`Completed ${selectedPersonas.length} visitor simulations`);
 })();
