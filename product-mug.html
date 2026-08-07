@@ -42,15 +42,22 @@ j=d.createElement(s),dl=l!='dataLayer'? '&l='+l: '';j.async=true;j.src=
 
         document.getElementById('addToCart').addEventListener('click', function() {
             const cart = JSON.parse(localStorage.getItem('mockCart') || '[]');
-            const item = {
-                id: 'mug-01',
-                name: 'Travel Mug',
-                price: 19.99,
-                quantity: 1,
-                brand: 'MockBrand',
-                category: 'Home'
-            };
-            cart.push(item);
+            let item = cart.find(entry => entry.id === 'mug-01');
+
+            if (!item) {
+                item = {
+                    id: 'mug-01',
+                    name: 'Travel Mug',
+                    price: 19.99,
+                    quantity: 1,
+                    brand: 'MockBrand',
+                    category: 'Home'
+                };
+                cart.push(item);
+            } else {
+                item.quantity += 1;
+            }
+
             localStorage.setItem('mockCart', JSON.stringify(cart));
 
             window.dataLayer.push({

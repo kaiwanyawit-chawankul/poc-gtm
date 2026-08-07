@@ -76,7 +76,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
             checkoutForm.addEventListener('submit', function(event) {
                 event.preventDefault();
-                const transactionId = 'TX-' + Date.now();
+                const transactionId = 'TX-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
                 const purchaseValue = total;
                 window.dataLayer.push({
                     event: 'purchase',

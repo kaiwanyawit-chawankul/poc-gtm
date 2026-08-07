@@ -1,55 +1,178 @@
 const { chromium } = require('playwright');
 
-(async () => {
+const baseUrl = 'https://poc-gtm-nu.vercel.app';
+
+const personas = [
+  {
+    id: 'alex',
+    name: 'Alex Chen',
+    email: 'alex.chen@example.com',
+    address: '88 Market Street, Seattle, WA',
+    viewport: { width: 1440, height: 900 },
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    plan: [{ product: 'mug', quantity: 2 }],
+    thinkTimeMs: 1500
+  },
+  {
+    id: 'mina',
+    name: 'Mina Patel',
+    email: 'mina.patel@example.com',
+    address: '12 Rose Avenue, Austin, TX',
+    viewport: { width: 1280, height: 800 },
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15',
+    plan: [{ product: 'backpack', quantity: 1 }],
+    thinkTimeMs: 2500
+  },
+  {
+    id: 'jordan',
+    name: 'Jordan Kim',
+    email: 'jordan.kim@example.com',
+    address: '302 Pine Road, Denver, CO',
+    viewport: { width: 1024, height: 768 },
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    plan: [{ product: 'mug', quantity: 1 }, { product: 'backpack', quantity: 1 }],
+    thinkTimeMs: 3200
+  },
+  {
+    id: 'sofia',
+    name: 'Sofia Martinez',
+    email: 'sofia.martinez@example.com',
+    address: '7 Harbor Blvd, Miami, FL',
+    viewport: { width: 390, height: 844 },
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    plan: [{ product: 'backpack', quantity: 2 }],
+    thinkTimeMs: 2200,
+    wander: true,
+    wanderPages: ['/', '/shop.html', '/', '/product.html', '/cart.html']
+  },
+  {
+    id: 'chris',
+    name: 'Chris Nguyen',
+    email: 'chris.nguyen@example.com',
+    address: '45 Willow Lane, Chicago, IL',
+    viewport: { width: 768, height: 1024 },
+    userAgent: 'Mozilla/5.0 (Android 14; Mobile; rv:120.0) Gecko/120.0 Firefox/120.0',
+    plan: [{ product: 'mug', quantity: 3 }],
+    thinkTimeMs: 4000,
+    abandonAt: 'cart'
+  },
+  {
+    id: 'taylor',
+    name: 'Taylor Brooks',
+    email: 'taylor.brooks@example.com',
+    address: '1600 Broadway, New York, NY',
+    viewport: { width: 1536, height: 960 },
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
+    plan: [{ product: 'backpack', quantity: 1 }, { product: 'mug', quantity: 1 }],
+    thinkTimeMs: 1800,
+    tourPages: ['/about.html', '/contact.html', '/shop.html', '/product.html', '/cart.html', '/checkout.html']
+  }
+];
+
+function shuffle(items) {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+  return copy;
+}
+
+async function think(persona, label) {
+  console.log(`[${persona.id}] ${label}`);
+  await new Promise(resolve => setTimeout(resolve, persona.thinkTimeMs || 1500));
+}
+
+async function simulateUser(persona) {
   const browser = await chromium.launch({
-    headless: false,
-    slowMo: 1000
+    headless: true,
+    slowMo: 200
   });
 
   const context = await browser.newContext({
-    viewport: { width: 1280, height: 720 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    viewport: persona.viewport,
+    userAgent: persona.userAgent
   });
 
   const page = await context.newPage();
 
   try {
-    console.log('Navigating to the homepage...');
-    await page.goto('https://poc-gtm-nu.vercel.app/', { waitUntil: 'domcontentloaded' });
+    console.log(`\n[${persona.id}] Starting simulation for ${persona.name}`);
+    await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded' });
 
-    console.log('Opening the shop...');
-    await page.getByRole('link', { name: 'Shop' }).click();
+    if (persona.tourPages) {
+      console.log(`[${persona.id}] Touring the site before buying`);
+      for (const path of persona.tourPages) {
+        await page.goto(`${baseUrl}${path}`, { waitUntil: 'domcontentloaded' });
+        await think(persona, `Browsing ${path}`);
+      }
+    }
 
-    console.log('Opening the first product page...');
-    await page.getByRole('link', { name: 'View details' }).first().click();
+    if (persona.wander) {
+      console.log(`[${persona.id}] Wandering between pages`);
+      for (const path of persona.wanderPages) {
+        await page.goto(`${baseUrl}${path}`, { waitUntil: 'domcontentloaded' });
+        await think(persona, `Looking around ${path}`);
+      }
+    }
 
-    console.log('Adding the product to the cart...');
-    page.once('dialog', async dialog => {
-      console.log('Dialog shown:', dialog.message());
-      await dialog.accept();
-    });
-    await page.getByRole('button', { name: 'Add to cart' }).click();
+    for (const step of persona.plan) {
+      const targetPath = step.product === 'backpack' ? '/product.html' : '/product-mug.html';
+      console.log(`[${persona.id}] Adding ${step.quantity} ${step.product}${step.quantity > 1 ? 's' : ''} to cart`);
 
-    console.log('Going to the cart...');
-    await page.getByRole('link', { name: 'Cart' }).click();
+      for (let index = 0; index < step.quantity; index += 1) {
+        await page.goto(`${baseUrl}${targetPath}`, { waitUntil: 'domcontentloaded' });
+        await think(persona, `Considering ${step.product}`);
+        page.once('dialog', async dialog => {
+          console.log(`[${persona.id}] Dialog: ${dialog.message()}`);
+          await dialog.accept();
+        });
+        await page.getByRole('button', { name: 'Add to cart' }).click();
+      }
+    }
+
+    if (persona.abandonAt === 'cart') {
+      console.log(`[${persona.id}] Getting distracted and leaving the flow at the cart`);
+      await page.goto(`${baseUrl}/cart.html`, { waitUntil: 'domcontentloaded' });
+      await think(persona, 'Checking the cart and then leaving');
+      return;
+    }
+
+    console.log(`[${persona.id}] Going to the cart`);
+    await page.goto(`${baseUrl}/cart.html`, { waitUntil: 'domcontentloaded' });
+    await think(persona, 'Reviewing cart before checkout');
     await page.getByRole('button', { name: 'Proceed to checkout' }).click();
 
-    console.log('Filling out checkout details...');
-    await page.getByLabel('Full name:').fill('Test User');
-    await page.getByLabel('Email:').fill('test@example.com');
-    await page.getByLabel('Shipping address:').fill('123 Test Street');
+    console.log(`[${persona.id}] Filling out checkout details`);
+    await think(persona, 'Filling in contact details');
+    await page.getByLabel('Full name:').fill(persona.name);
+    await page.getByLabel('Email:').fill(persona.email);
+    await page.getByLabel('Shipping address:').fill(persona.address);
 
-    console.log('Completing the purchase...');
+    console.log(`[${persona.id}] Completing purchase`);
+    await think(persona, 'Submitting the order');
     await page.getByRole('button', { name: 'Complete purchase' }).click();
 
-    console.log('Saving a screenshot of the confirmation page...');
-    await page.screenshot({ path: 'checkout_simulation.png', fullPage: true });
+    const confirmationUrl = page.url();
+    const transactionId = new URL(confirmationUrl).searchParams.get('transactionId');
+    console.log(`[${persona.id}] Confirmation URL: ${confirmationUrl}`);
+    console.log(`[${persona.id}] Transaction ID: ${transactionId}`);
+
+    console.log(`[${persona.id}] Saving screenshot`);
+    await page.screenshot({ path: `screenshots/checkout_simulation_${persona.id}.png`, fullPage: true });
   } catch (error) {
-    console.error('Simulation failed:', error);
-    await page.screenshot({ path: 'simulation_error.png', fullPage: true });
+    console.error(`[${persona.id}] Simulation failed:`, error);
+    await page.screenshot({ path: `screenshots/simulation_error_${persona.id}.png`, fullPage: true });
   } finally {
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
+    await context.close();
     await browser.close();
-    console.log('Browser closed.');
+    console.log(`[${persona.id}] Browser closed`);
   }
+}
+
+(async () => {
+  const randomizedPersonas = shuffle(personas);
+  await Promise.all(randomizedPersonas.map(persona => simulateUser(persona)));
+  console.log('All personas completed');
 })();
