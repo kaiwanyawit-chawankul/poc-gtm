@@ -1,0 +1,77 @@
+<html>
+<head>
+    <title>Product - Travel Mug</title>
+    <!-- Google Tag Manager -->
+    <script>
+        window.dataLayer = window.dataLayer || [];
+    </script>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'? '&l='+l: '';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NR75TCK8');</script>
+
+<!-- End Google Tag Manager -->
+</head>
+<body>
+    <h1>Travel Mug</h1>
+    <p>Keep your drinks hot or cold on the go. Mock product page for GTM testing.</p>
+    <p>Price: $19.99</p>
+    <p>Material: Stainless steel with vacuum insulation.</p>
+    <button id="addToCart">Add to cart</button>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="cart.html">Cart</a></li>
+        </ul>
+    </nav>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            event: 'view_item',
+            ecommerce: {
+                currency: 'USD',
+                items: [
+                    {item_name: 'Travel Mug', item_id: 'mug-01', price: 19.99, item_brand: 'MockBrand', item_category: 'Home'}
+                ]
+            }
+        });
+
+        document.getElementById('addToCart').addEventListener('click', function() {
+            const cart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+            const item = {
+                id: 'mug-01',
+                name: 'Travel Mug',
+                price: 19.99,
+                quantity: 1,
+                brand: 'MockBrand',
+                category: 'Home'
+            };
+            cart.push(item);
+            localStorage.setItem('mockCart', JSON.stringify(cart));
+
+            window.dataLayer.push({
+                event: 'add_to_cart',
+                ecommerce: {
+                    currency: 'USD',
+                    value: item.price * item.quantity,
+                    items: [
+                        {item_name: item.name, item_id: item.id, price: item.price, quantity: item.quantity, item_brand: item.brand, item_category: item.category}
+                    ]
+                }
+            });
+            alert('Mock item added to cart.');
+        });
+    </script>
+    <footer>
+        <p>&copy; 2024 My Web Page. All rights reserved.</p>
+    </footer>
+    <!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NR75TCK8"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+</body>
+</html>
