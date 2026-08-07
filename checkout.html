@@ -1,0 +1,112 @@
+<html>
+<head>
+    <title>Checkout - My Web Page</title>
+    <!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NR75TCK8');</script>
+
+<!-- End Google Tag Manager -->
+</head>
+<body>
+    <h1>Checkout</h1>
+    <p>Enter your details and complete the mock purchase.</p>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="cart.html">Cart</a></li>
+        </ul>
+    </nav>
+    <section id="checkoutSummary"></section>
+    <form id="checkoutForm">
+        <label>
+            Full name:<br>
+            <input type="text" name="name" required>
+        </label><br><br>
+        <label>
+            Email:<br>
+            <input type="email" name="email" required>
+        </label><br><br>
+        <label>
+            Shipping address:<br>
+            <input type="text" name="address" required>
+        </label><br><br>
+        <button type="submit">Complete purchase</button>
+    </form>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        const cart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+        const checkoutSummary = document.getElementById('checkoutSummary');
+        const checkoutForm = document.getElementById('checkoutForm');
+
+        if (cart.length === 0) {
+            checkoutSummary.innerHTML = '<p>Your cart is empty. Please add items first.</p>';
+            checkoutForm.style.display = 'none';
+        } else {
+            let total = 0;
+            const summaryHtml = cart.map(item => {
+                total += item.price * item.quantity;
+                return `<li>${item.name} — $${item.price.toFixed(2)} × ${item.quantity}</li>`;
+            }).join('');
+            checkoutSummary.innerHTML = `<ul>${summaryHtml}</ul><p><strong>Total:</strong> $${total.toFixed(2)}</p>`;
+
+            window.dataLayer.push({
+                event: 'begin_checkout',
+                ecommerce: {
+                    items: cart.map(item => ({
+                        item_name: item.name,
+                        item_id: item.id,
+                        price: item.price.toFixed(2),
+                        quantity: item.quantity,
+                        item_brand: item.brand,
+                        item_category: item.category
+                    })),
+                    value: total.toFixed(2)
+                }
+            });
+
+            checkoutForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const transactionId = 'TX-' + Date.now();
+                const purchaseValue = total.toFixed(2);
+                window.dataLayer.push({
+                    event: 'purchase',
+                    ecommerce: {
+                        transaction_id: transactionId,
+                        value: purchaseValue,
+                        currency: 'USD',
+                        items: cart.map(item => ({
+                            item_name: item.name,
+                            item_id: item.id,
+                            price: item.price.toFixed(2),
+                            quantity: item.quantity,
+                            item_brand: item.brand,
+                            item_category: item.category
+                        }))
+                    }
+                });
+
+                localStorage.setItem('mockLastOrder', JSON.stringify({
+                    transactionId,
+                    value: purchaseValue,
+                    items: cart
+                }));
+                localStorage.removeItem('mockCart');
+                window.location.href = 'order-confirmation.html?transactionId=' + encodeURIComponent(transactionId);
+            });
+        }
+    </script>
+    <footer>
+        <p>&copy; 2024 My Web Page. All rights reserved.</p>
+    </footer>
+    <!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NR75TCK8"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+</body>
+</html>

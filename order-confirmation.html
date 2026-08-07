@@ -1,0 +1,49 @@
+<html>
+<head>
+    <title>Order Confirmation - My Web Page</title>
+    <!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-NR75TCK8');</script>
+
+<!-- End Google Tag Manager -->
+</head>
+<body>
+    <h1>Thank you for your purchase!</h1>
+    <p>Your order is confirmed and the transaction is complete.</p>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="shop.html">Shop</a></li>
+            <li><a href="cart.html">Cart</a></li>
+        </ul>
+    </nav>
+    <section id="confirmationDetails"></section>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const transactionId = params.get('transactionId');
+        const lastOrder = JSON.parse(localStorage.getItem('mockLastOrder') || '{}');
+        const confirmationDetails = document.getElementById('confirmationDetails');
+
+        if (transactionId && lastOrder.transactionId === transactionId) {
+            const itemHtml = (lastOrder.items || []).map(item =>
+                `<li>${item.name} — $${item.price.toFixed(2)} × ${item.quantity}</li>`
+            ).join('');
+            confirmationDetails.innerHTML = `<p><strong>Order ID:</strong> ${transactionId}</p><p><strong>Total:</strong> $${lastOrder.value}</p><ul>${itemHtml}</ul>`;
+        } else {
+            confirmationDetails.innerHTML = '<p>Order details are not available. Please return to the shop and try again.</p>';
+        }
+    </script>
+    <footer>
+        <p>&copy; 2024 My Web Page. All rights reserved.</p>
+    </footer>
+    <!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NR75TCK8"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+</body>
+</html>
