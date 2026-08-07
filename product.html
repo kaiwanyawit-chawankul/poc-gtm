@@ -2,6 +2,9 @@
 <head>
     <title>Product - My Web Page</title>
     <!-- Google Tag Manager -->
+    <script>
+        window.dataLayer = window.dataLayer || [];
+    </script>
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -30,8 +33,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         window.dataLayer.push({
             event: 'view_item',
             ecommerce: {
+                currency: 'USD',
                 items: [
-                    {item_name: 'Classic Backpack', item_id: 'backpack-01', price: '49.00', item_brand: 'MockBrand', item_category: 'Accessories'}
+                    {item_name: 'Classic Backpack', item_id: 'backpack-01', price: 49.00, item_brand: 'MockBrand', item_category: 'Accessories'}
                 ]
             }
         });
@@ -52,8 +56,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             window.dataLayer.push({
                 event: 'add_to_cart',
                 ecommerce: {
+                    currency: 'USD',
+                    value: item.price * item.quantity,
                     items: [
-                        {item_name: item.name, item_id: item.id, price: item.price.toFixed(2), quantity: item.quantity, item_brand: item.brand, item_category: item.category}
+                        {item_name: item.name, item_id: item.id, price: item.price, quantity: item.quantity, item_brand: item.brand, item_category: item.category}
                     ]
                 }
             });
