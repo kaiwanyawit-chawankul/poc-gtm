@@ -85,6 +85,31 @@ function shuffle(items) {
   return copy;
 }
 
+function buildUserContext(persona) {
+  const planCount = (persona.plan || []).reduce((total, item) => total + Number(item.quantity || 0), 0);
+  return {
+    persona: persona.id,
+    personaName: persona.name,
+    userId: persona.email,
+    planCount: String(planCount),
+    emailDomain: persona.email.split('@')[1] || 'unknown'
+  };
+}
+
+function buildPageUrl(path, persona) {
+  const context = buildUserContext(persona);
+  const params = new URLSearchParams({
+    persona: context.persona,
+    personaName: context.personaName,
+    userId: context.userId,
+    planCount: context.planCount,
+    emailDomain: context.emailDomain
+  });
+
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${normalizedPath}?${params.toString()}`;
+}
+
 // Visual Anchor: Randomizes thinking time to mimic variable human processing speeds
 async function think(persona, label) {
   const humanVariance = Math.floor(Math.random() * 1500) - 500; // Adds/subtracts up to 1 second
@@ -110,12 +135,12 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
 
   try {
     console.log(`\n[${persona.id}] Starting simulation for ${persona.name}`);
-    await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded' });
+    await page.goto(buildPageUrl('/', persona), { waitUntil: 'domcontentloaded' });
 
     if (persona.tourPages) {
       console.log(`[${persona.id}] Touring the site before buying`);
       for (const path of persona.tourPages) {
-        await page.goto(`${baseUrl}${path}`, { waitUntil: 'domcontentloaded' });
+        await page.goto(buildPageUrl(path, persona), { waitUntil: 'domcontentloaded' });
         await think(persona, `Browsing ${path}`);
       }
     }
@@ -123,7 +148,7 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
     if (persona.wander) {
       console.log(`[${persona.id}] Wandering between pages`);
       for (const path of persona.wanderPages) {
-        await page.goto(`${baseUrl}${path}`, { waitUntil: 'domcontentloaded' });
+        await page.goto(buildPageUrl(path, persona), { waitUntil: 'domcontentloaded' });
         await think(persona, `Looking around ${path}`);
       }
     }
@@ -133,7 +158,7 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
       console.log(`[${persona.id}] Adding ${step.quantity} ${step.product}${step.quantity > 1 ? 's' : ''} to cart`);
 
       for (let index = 0; index < step.quantity; index += 1) {
-        await page.goto(`${baseUrl}${targetPath}`, { waitUntil: 'domcontentloaded' });
+        await page.goto(buildPageUrl(targetPath, persona), { waitUntil: 'domcontentloaded' });
         await think(persona, `Considering ${step.product}`);
         page.once('dialog', async dialog => {
           console.log(`[${persona.id}] Dialog: ${dialog.message()}`);
@@ -145,13 +170,13 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
 
     if (persona.abandonAt === 'cart') {
       console.log(`[${persona.id}] Getting distracted and leaving the flow at the cart`);
-      await page.goto(`${baseUrl}/cart.html`, { waitUntil: 'domcontentloaded' });
+      await page.goto(buildPageUrl('/cart.html', persona), { waitUntil: 'domcontentloaded' });
       await think(persona, 'Checking the cart and then leaving');
       return;
     }
 
     console.log(`[${persona.id}] Going to the cart`);
-    await page.goto(`${baseUrl}/cart.html`, { waitUntil: 'domcontentloaded' });
+    await page.goto(buildPageUrl('/cart.html', persona), { waitUntil: 'domcontentloaded' });
     await think(persona, 'Reviewing cart before checkout');
     await page.getByRole('button', { name: 'Proceed to checkout' }).click();
 
