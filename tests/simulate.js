@@ -48,7 +48,7 @@ const personas = [
     address: '7 Harbor Blvd, Miami, FL',
     viewport: { width: 390, height: 844 },
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-    plan: [{ product: 'backpack', quantity: 2 }],
+    plan: [{ product: 'backpack', quantity: 2 }, { product: 'tshirt', quantity: 1 }],
     thinkTimeMs: 2200,
     wander: true,
     wanderPages: ['/', '/shop.html', '/', '/product.html', '/cart.html']
@@ -294,8 +294,17 @@ async function runWithConcurrencyLimit(browser, tasks) {
 }
 
 (async () => {
+  // Generates a random target between 4 and 20 visits
   const dailyVisitCount = 4 + Math.floor(Math.random() * 17);
-  const selectedPersonas = shuffle(personas).slice(0, dailyVisitCount);
+
+  // FIX: Create an array populated by randomly picking from the 7 available personas
+  const selectedPersonas = [];
+  for (let i = 0; i < dailyVisitCount; i++) {
+    const randomIndex = Math.floor(Math.random() * personas.length);
+    // Deep clone the persona object if you plan to modify properties per session
+    selectedPersonas.push({ ...personas[randomIndex] });
+  }
+
   const arrivalOffsets = selectedPersonas.map(() => Math.floor(Math.random() * 8000));
 
   console.log(`Simulating a daily traffic load of ${selectedPersonas.length} visitors.`);
@@ -304,7 +313,7 @@ async function runWithConcurrencyLimit(browser, tasks) {
   // Launch a unique browser container process to minimize CPU load
   const browser = await chromium.launch({
     headless: true,
-    slowMo: 50 // Decreased slowMo to ensure load speeds reflect server stress instead of automation delays
+    slowMo: 50
   });
 
   const sessionTasks = selectedPersonas.map((persona, index) => {
