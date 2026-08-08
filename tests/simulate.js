@@ -105,7 +105,7 @@ const personas = [
     address: '22 Sakura Way, San Francisco, CA',
     viewport: { width: 1280, height: 800 }, // Samsung Galaxy Tab (Horizontal Tablet)
     userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-X810) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 EdgA/122.0.2365.86', // Edge on Android Tablet
-    plan: [{ product: 'backpack', quantity: 1 }],
+    plan: [{ product: 'tshirt', quantity: 1 }],
     thinkTimeMs: 2800,
     abandonAt: 'checkout' // Window shopper who flakes at the final step
   }
@@ -210,7 +210,11 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
     }
 
     for (const step of persona.plan) {
-      const targetPath = step.product === 'backpack' ? '/product.html' : '/product-mug.html';
+      const targetPath = step.product === 'backpack'
+        ? '/product.html'
+        : step.product === 'tshirt'
+          ? '/product-tshirt.html'
+          : '/product-mug.html';
       console.log(`[${persona.id}] Adding ${step.quantity} ${step.product}${step.quantity > 1 ? 's' : ''} to cart`);
 
       for (let index = 0; index < step.quantity; index += 1) {

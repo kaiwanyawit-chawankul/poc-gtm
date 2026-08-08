@@ -9,7 +9,12 @@
             const personaId = params.get('persona') || localStorage.getItem('gtmPersonaId') || 'guest';
             const personaName = params.get('personaName') || (personaId === 'guest' ? 'Guest' : personaId);
             const planCount = Number(params.get('planCount') || localStorage.getItem('gtmPlanCount') || 0);
-            const deviceType = /iPhone|Android/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+            const ua = navigator.userAgent;
+            const isTablet = /\b(iPad|Tablet|SM-T|GT-P|Xoom|SCH-I800|PlayBook|Android(?!.*Mobile))\b/i.test(ua);
+            const isMobile = /\b(iPhone|Android.*Mobile|Windows Phone|BlackBerry|BB10)\b/i.test(ua);
+            const isEdge = /\bEdg(e|A|iOS)\b/i.test(ua);
+            const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+            const browserName = isEdge ? 'edge' : /\b(OPR|Opera)\b/i.test(ua) ? 'opera' : /\bChrome\b/i.test(ua) ? 'chrome' : /\bSafari\b/i.test(ua) ? 'safari' : /\bFirefox\b/i.test(ua) ? 'firefox' : 'other';
             const emailDomain = params.get('emailDomain') || 'unknown';
             window.dataLayer.push({
                 event: 'client_user_profile',
@@ -19,6 +24,7 @@
                     persona_name: personaName,
                     plan_count: Number.isFinite(planCount) ? planCount : 0,
                     device_type: deviceType,
+                    browser_name: browserName,
                     email_domain: emailDomain
                 }
             });

@@ -9,7 +9,12 @@
         const personaId = params.get('persona') || localStorage.getItem('gtmPersonaId') || 'guest';
         const personaName = params.get('personaName') || (personaId === 'guest' ? 'Guest' : personaId);
         const planCount = Number(params.get('planCount') || localStorage.getItem('gtmPlanCount') || 0);
-        const deviceType = /iPhone|Android/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+        const ua = navigator.userAgent;
+        const isTablet = /\b(iPad|Tablet|SM-T|GT-P|Xoom|SCH-I800|PlayBook|Android(?!.*Mobile))\b/i.test(ua);
+        const isMobile = /\b(iPhone|Android.*Mobile|Windows Phone|BlackBerry|BB10)\b/i.test(ua);
+        const isEdge = /\bEdg(e|A|iOS)\b/i.test(ua);
+        const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+        const browserName = isEdge ? 'edge' : /\b(OPR|Opera)\b/i.test(ua) ? 'opera' : /\bChrome\b/i.test(ua) ? 'chrome' : /\bSafari\b/i.test(ua) ? 'safari' : /\bFirefox\b/i.test(ua) ? 'firefox' : 'other';
         const emailDomain = params.get('emailDomain') || 'unknown';
         window.dataLayer.push({
             event: 'client_user_profile',
@@ -57,6 +62,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             <p>Price: $19.99</p>
             <a href="product-mug.html">View details</a>
         </article>
+        <article>
+            <h2>T-Shirt</h2>
+            <p>Stay comfortable and stylish with our premium t-shirts.</p>
+            <p>Price: $29.99</p>
+            <a href="product-tshirt.html">View details</a>
+        </article>
     </section>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -65,7 +76,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             ecommerce: {
                 items: [
                     {item_name: 'Classic Backpack', item_id: 'backpack-01', price: '49.00', item_brand: 'MockBrand', item_category: 'Accessories'},
-                    {item_name: 'Travel Mug', item_id: 'mug-01', price: '19.99', item_brand: 'MockBrand', item_category: 'Home'}
+                    {item_name: 'Travel Mug', item_id: 'mug-01', price: '19.99', item_brand: 'MockBrand', item_category: 'Home'},
+                    {item_name: 'T-Shirt', item_id: 'tshirt-01', price: '29.99', item_brand: 'MockBrand', item_category: 'Clothing'}
                 ]
             }
         });

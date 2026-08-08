@@ -1,6 +1,6 @@
 <html>
 <head>
-    <title>Cart - My Web Page</title>
+    <title>Product - T-Shirt</title>
     <!-- Google Tag Manager -->
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -32,15 +32,18 @@
     </script>
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+j=d.createElement(s),dl=l!='dataLayer'? '&l='+l: '';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-NR75TCK8');</script>
 
 <!-- End Google Tag Manager -->
 </head>
 <body>
-    <h1>Shopping Cart</h1>
-    <p>Review your mock cart and continue to checkout.</p>
+    <h1>T-Shirt</h1>
+    <p>Stay comfortable and stylish with our premium t-shirts. Mock product page for GTM testing.</p>
+    <p>Price: $29.99</p>
+    <p>Material: 100% cotton.</p>
+    <button id="addToCart">Add to cart</button>
     <nav>
         <ul>
             <li><a href="index.html">Home</a></li>
@@ -50,44 +53,49 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             <li><a href="cart.html">Cart</a></li>
         </ul>
     </nav>
-    <section id="cartContent"></section>
-    <button id="checkoutButton">Proceed to checkout</button>
     <script>
         window.dataLayer = window.dataLayer || [];
-        const cart = JSON.parse(localStorage.getItem('mockCart') || '[]');
-        const cartContent = document.getElementById('cartContent');
-        const checkoutButton = document.getElementById('checkoutButton');
+        window.dataLayer.push({
+            event: 'view_item',
+            ecommerce: {
+                currency: 'USD',
+                items: [
+                    {item_name: 'T-Shirt', item_id: 'tshirt-01', price: 29.99, item_brand: 'MockBrand', item_category: 'Clothing'}
+                ]
+            }
+        });
 
-        if (cart.length === 0) {
-            cartContent.innerHTML = '<p>Your cart is empty. <a href="shop.html">Go to shop</a> to add items.</p>';
-            checkoutButton.disabled = true;
-        } else {
-            let total = 0;
-            const itemsHtml = cart.map(item => {
-                total += item.price * item.quantity;
-                return `<li>${item.name} — $${item.price.toFixed(2)} × ${item.quantity}</li>`;
-            }).join('');
-            cartContent.innerHTML = `<ul>${itemsHtml}</ul><p><strong>Total:</strong> $${total.toFixed(2)}</p>`;
+        document.getElementById('addToCart').addEventListener('click', function() {
+            const cart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+            let item = cart.find(entry => entry.id === 'tshirt-01');
+
+            if (!item) {
+                item = {
+                    id: 'tshirt-01',
+                    name: 'T-Shirt',
+                    price: 29.99,
+                    quantity: 1,
+                    brand: 'MockBrand',
+                    category: 'Clothing'
+                };
+                cart.push(item);
+            } else {
+                item.quantity += 1;
+            }
+
+            localStorage.setItem('mockCart', JSON.stringify(cart));
 
             window.dataLayer.push({
-                event: 'view_cart',
+                event: 'add_to_cart',
                 ecommerce: {
                     currency: 'USD',
-                    items: cart.map(item => ({
-                        item_name: item.name,
-                        item_id: item.id,
-                        price: item.price,
-                        quantity: item.quantity,
-                        item_brand: item.brand,
-                        item_category: item.category
-                    })),
-                    value: total
+                    value: item.price * item.quantity,
+                    items: [
+                        {item_name: item.name, item_id: item.id, price: item.price, quantity: item.quantity, item_brand: item.brand, item_category: item.category}
+                    ]
                 }
             });
-        }
-
-        checkoutButton.addEventListener('click', function() {
-            window.location.href = 'checkout.html';
+            alert('Mock item added to cart.');
         });
     </script>
     <footer>
