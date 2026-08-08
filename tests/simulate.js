@@ -6,6 +6,9 @@ const baseUrl = 'https://poc-gtm-nu.vercel.app';
 const screenshotsDir = path.join(__dirname, 'screenshots');
 fs.mkdirSync(screenshotsDir, { recursive: true });
 
+// Max number of user sessions running at the exact same second
+const MAX_CONCURRENT_USERS = 3;
+
 const personas = [
   {
     id: 'alex',
@@ -82,22 +85,22 @@ function shuffle(items) {
   return copy;
 }
 
+// Visual Anchor: Randomizes thinking time to mimic variable human processing speeds
 async function think(persona, label) {
-  console.log(`[${persona.id}] ${label}`);
-  await new Promise(resolve => setTimeout(resolve, persona.thinkTimeMs || 1500));
+  const humanVariance = Math.floor(Math.random() * 1500) - 500; // Adds/subtracts up to 1 second
+  const finalWait = Math.max(500, (persona.thinkTimeMs || 1500) + humanVariance);
+  console.log(`[${persona.id}] ${label} (Waiting ${finalWait}ms)`);
+  await new Promise(resolve => setTimeout(resolve, finalWait));
 }
 
-async function simulateUser(persona, startDelayMs = 0) {
+// Visual Anchor: Browser instance shared via argument injection
+async function simulateUser(browser, persona, startDelayMs = 0) {
   if (startDelayMs > 0) {
-    console.log(`[${persona.id}] Arriving after ${startDelayMs}ms`);
+    console.log(`[${persona.id}] Queued: Arriving after ${startDelayMs}ms`);
     await new Promise(resolve => setTimeout(resolve, startDelayMs));
   }
 
-  const browser = await chromium.launch({
-    headless: true,
-    slowMo: 200
-  });
-
+  // Context isolation keeps individual logins, sessions, and cookies clean
   const context = await browser.newContext({
     viewport: persona.viewport,
     userAgent: persona.userAgent
@@ -175,9 +178,27 @@ async function simulateUser(persona, startDelayMs = 0) {
   } finally {
     await page.waitForTimeout(1000);
     await context.close();
-    await browser.close();
-    console.log(`[${persona.id}] Browser closed`);
+    console.log(`[${persona.id}] Session closed context.`);
   }
+}
+
+// Visual Anchor: Worker pool execution loop to enforce maximum active windows
+async function runWithConcurrencyLimit(browser, tasks) {
+  const pool = new Set();
+  const promises = [];
+
+  for (const task of tasks) {
+    if (pool.size >= MAX_CONCURRENT_USERS) {
+      await Promise.race(pool);
+    }
+    const promise = (async () => {
+      await task();
+    })();
+    promises.push(promise);
+    pool.add(promise);
+    promise.finally(() => pool.delete(promise));
+  }
+  await Promise.all(promises);
 }
 
 (async () => {
@@ -185,7 +206,21 @@ async function simulateUser(persona, startDelayMs = 0) {
   const selectedPersonas = shuffle(personas).slice(0, dailyVisitCount);
   const arrivalOffsets = selectedPersonas.map(() => Math.floor(Math.random() * 8000));
 
-  console.log(`Simulating a daily traffic load of ${selectedPersonas.length} visitors`);
-  await Promise.all(selectedPersonas.map((persona, index) => simulateUser(persona, arrivalOffsets[index])));
-  console.log(`Completed ${selectedPersonas.length} visitor simulations`);
+  console.log(`Simulating a daily traffic load of ${selectedPersonas.length} visitors.`);
+  console.log(`Maximum parallel browser tasks allowed: ${MAX_CONCURRENT_USERS}\n`);
+
+  // Launch a unique browser container process to minimize CPU load
+  const browser = await chromium.launch({
+    headless: true,
+    slowMo: 50 // Decreased slowMo to ensure load speeds reflect server stress instead of automation delays
+  });
+
+  const sessionTasks = selectedPersonas.map((persona, index) => {
+    return () => simulateUser(browser, persona, arrivalOffsets[index]);
+  });
+
+  await runWithConcurrencyLimit(browser, sessionTasks);
+
+  await browser.close();
+  console.log(`\nCompleted ${selectedPersonas.length} visitor simulations clean.`);
 })();
