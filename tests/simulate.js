@@ -93,23 +93,6 @@ async function think(persona, label) {
   await new Promise(resolve => setTimeout(resolve, finalWait));
 }
 
-async function pushUserPropertyEvent(page, persona) {
-  await page.evaluate((userData) => {
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      event: 'simulated_user_profile',
-      user_id: userData.email,
-      user_properties: {
-        persona_id: userData.id,
-        persona_name: userData.name,
-        plan_count: (userData.plan || []).length,
-        device_type: /iPhone|Android/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-        email_domain: userData.email.split('@')[1] || 'unknown'
-      }
-    });
-  }, persona);
-}
-
 // Visual Anchor: Browser instance shared via argument injection
 async function simulateUser(browser, persona, startDelayMs = 0) {
   if (startDelayMs > 0) {
@@ -128,7 +111,6 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
   try {
     console.log(`\n[${persona.id}] Starting simulation for ${persona.name}`);
     await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded' });
-    await pushUserPropertyEvent(page, persona);
 
     if (persona.tourPages) {
       console.log(`[${persona.id}] Touring the site before buying`);

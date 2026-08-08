@@ -2,6 +2,28 @@
 <head>
     <title>Contact - My Web Page</title>
     <!-- Google Tag Manager -->
+<script>
+    window.dataLayer = window.dataLayer || [];
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const personaId = params.get('persona') || localStorage.getItem('gtmPersonaId') || 'guest';
+        const personaName = params.get('personaName') || (personaId === 'guest' ? 'Guest' : personaId);
+        const planCount = Number(params.get('planCount') || localStorage.getItem('gtmPlanCount') || 0);
+        const deviceType = /iPhone|Android/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+        const emailDomain = params.get('emailDomain') || 'unknown';
+        window.dataLayer.push({
+            event: 'client_user_profile',
+            user_id: params.get('userId') || localStorage.getItem('gtmUserId') || '',
+            user_properties: {
+                persona_id: personaId,
+                persona_name: personaName,
+                plan_count: Number.isFinite(planCount) ? planCount : 0,
+                device_type: deviceType,
+                email_domain: emailDomain
+            }
+        });
+    })();
+</script>
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
