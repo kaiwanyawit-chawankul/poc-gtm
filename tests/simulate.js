@@ -82,7 +82,7 @@ const personas = [
     address: '55 Ocean Drive, Boston, MA',
     viewport: { width: 820, height: 1180 }, // iPad Air (Vertical Tablet)
     userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/17.4 Mobile/15E148 EdgiOS/122.0.2365.80', // Edge on iOS Tablet
-    plan: [{ product: 'mug', quantity: 12 }], // Corporate bulk buyer
+    plan: [{ product: 'mug', quantity: 5 }], // Corporate bulk buyer
     thinkTimeMs: 5000, // Very slow, careful reviewer
     wander: true,
     wanderPages: ['/', '/about.html', '/shop.html', '/product.html']
@@ -228,6 +228,13 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
       console.log(`[${persona.id}] Getting distracted and leaving the flow at the cart`);
       await navigateWithProfile(page, persona, '/cart.html');
       await think(persona, 'Checking the cart and then leaving');
+      return;
+    }
+
+    if (persona.abandonAt === 'checkout') {
+      console.log(`[${persona.id}] Getting distracted and leaving the flow at checkout`);
+      await navigateWithProfile(page, persona, '/checkout.html');
+      await think(persona, 'Filling in some details but then leaving');
       return;
     }
 
