@@ -47,6 +47,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         const checkoutSummary = document.getElementById('checkoutSummary');
         const checkoutForm = document.getElementById('checkoutForm');
 
+        const buildItemData = () => cart.map(item => ({
+            item_name: item.name,
+            item_id: item.id,
+            price: item.price,
+            quantity: item.quantity,
+            item_brand: item.brand,
+            item_category: item.category
+        }));
+
         if (cart.length === 0) {
             checkoutSummary.innerHTML = '<p>Your cart is empty. Please add items first.</p>';
             checkoutForm.style.display = 'none';
@@ -62,20 +71,55 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 event: 'begin_checkout',
                 ecommerce: {
                     currency: 'USD',
-                    items: cart.map(item => ({
-                        item_name: item.name,
-                        item_id: item.id,
-                        price: item.price,
-                        quantity: item.quantity,
-                        item_brand: item.brand,
-                        item_category: item.category
-                    })),
+                    items: buildItemData(),
                     value: total
+                }
+            });
+
+            let shippingEventSent = false;
+            let paymentEventSent = false;
+
+            checkoutForm.addEventListener('input', function() {
+                if (shippingEventSent) {
+                    return;
+                }
+
+                const formData = new FormData(checkoutForm);
+                const shippingComplete = ['name', 'email', 'address'].every(fieldName => {
+                    const value = (formData.get(fieldName) || '').toString().trim();
+                    return value.length > 0;
+                });
+
+                if (shippingComplete) {
+                    shippingEventSent = true;
+                    window.dataLayer.push({
+                        event: 'add_shipping',
+                        ecommerce: {
+                            currency: 'USD',
+                            items: buildItemData(),
+                            value: total,
+                            shipping_tier: 'standard'
+                        }
+                    });
                 }
             });
 
             checkoutForm.addEventListener('submit', function(event) {
                 event.preventDefault();
+
+                if (!paymentEventSent) {
+                    paymentEventSent = true;
+                    window.dataLayer.push({
+                        event: 'add_payment',
+                        ecommerce: {
+                            currency: 'USD',
+                            items: buildItemData(),
+                            value: total,
+                            payment_type: 'mock_card'
+                        }
+                    });
+                }
+
                 const transactionId = 'TX-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
                 const purchaseValue = total;
                 window.dataLayer.push({
@@ -84,14 +128,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                         transaction_id: transactionId,
                         value: purchaseValue,
                         currency: 'USD',
-                        items: cart.map(item => ({
-                            item_name: item.name,
-                            item_id: item.id,
-                            price: item.price,
-                            quantity: item.quantity,
-                            item_brand: item.brand,
-                            item_category: item.category
-                        }))
+                        items: buildItemData()
                     }
                 });
 
