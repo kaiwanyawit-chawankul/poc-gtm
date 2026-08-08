@@ -74,7 +74,42 @@ const personas = [
     plan: [{ product: 'backpack', quantity: 1 }, { product: 'mug', quantity: 1 }],
     thinkTimeMs: 1800,
     tourPages: ['/about.html', '/contact.html', '/shop.html', '/product.html', '/cart.html', '/checkout.html']
+  },
+  {
+    id: 'elena',
+    name: 'Elena Rostova',
+    email: 'elena.rostova@example.com',
+    address: '55 Ocean Drive, Boston, MA',
+    viewport: { width: 820, height: 1180 }, // iPad Air (Vertical Tablet)
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/17.4 Mobile/15E148 EdgiOS/122.0.2365.80', // Edge on iOS Tablet
+    plan: [{ product: 'mug', quantity: 12 }], // Corporate bulk buyer
+    thinkTimeMs: 5000, // Very slow, careful reviewer
+    wander: true,
+    wanderPages: ['/', '/about.html', '/shop.html', '/product.html']
+  },
+  {
+    id: 'marcus',
+    name: 'Marcus Vance',
+    email: 'marcus.vance@example.com',
+    address: '901 Grand Ave, Phoenix, AZ',
+    viewport: { width: 1366, height: 768 }, // Desktop / Surface Pro (Horizontal Tablet)
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.2365.92', // Edge on Windows Desktop/Tablet
+    plan: [{ product: 'backpack', quantity: 2 }, { product: 'mug', quantity: 2 }],
+    thinkTimeMs: 1200, // Fast, decisive clicker
+    tourPages: ['/', '/shop.html', '/product.html', '/cart.html', '/checkout.html']
+  },
+  {
+    id: 'yuki',
+    name: 'Yuki Tanaka',
+    email: 'yuki.tanaka@example.com',
+    address: '22 Sakura Way, San Francisco, CA',
+    viewport: { width: 1280, height: 800 }, // Samsung Galaxy Tab (Horizontal Tablet)
+    userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-X810) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 EdgA/122.0.2365.86', // Edge on Android Tablet
+    plan: [{ product: 'backpack', quantity: 1 }],
+    thinkTimeMs: 2800,
+    abandonAt: 'checkout' // Window shopper who flakes at the final step
   }
+
 ];
 
 function shuffle(items) {
