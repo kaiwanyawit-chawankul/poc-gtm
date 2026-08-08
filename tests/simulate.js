@@ -8,6 +8,7 @@ fs.mkdirSync(screenshotsDir, { recursive: true });
 
 // Max number of user sessions running at the exact same second
 const MAX_CONCURRENT_USERS = 3;
+const GTM_STORAGE_KEYS = ['gtmPersonaId', 'gtmPersonaName', 'gtmPlanCount', 'gtmEmailDomain', 'gtmUserId'];
 
 const personas = [
   {
@@ -110,6 +111,25 @@ function buildPageUrl(path, persona) {
   return `${baseUrl}${normalizedPath}?${params.toString()}`;
 }
 
+async function resetGtmStorage(page) {
+  try {
+    await page.evaluate((storageKeys) => {
+      for (const key of storageKeys) {
+        sessionStorage.removeItem(key);
+        localStorage.removeItem(key);
+      }
+    }, GTM_STORAGE_KEYS);
+  } catch (error) {
+    // Ignore storage access errors on blank or restricted contexts; the page still receives the persona URL params.
+  }
+}
+
+async function navigateWithProfile(page, persona, path) {
+  const targetUrl = buildPageUrl(path, persona);
+  await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
+  await resetGtmStorage(page);
+}
+
 // Visual Anchor: Randomizes thinking time to mimic variable human processing speeds
 async function think(persona, label) {
   const humanVariance = Math.floor(Math.random() * 1500) - 500; // Adds/subtracts up to 1 second
@@ -128,19 +148,20 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
   // Context isolation keeps individual logins, sessions, and cookies clean
   const context = await browser.newContext({
     viewport: persona.viewport,
-    userAgent: persona.userAgent
+    userAgent: persona.userAgent,
+    storageState: { cookies: [], origins: [] }
   });
 
   const page = await context.newPage();
 
   try {
     console.log(`\n[${persona.id}] Starting simulation for ${persona.name}`);
-    await page.goto(buildPageUrl('/', persona), { waitUntil: 'domcontentloaded' });
+    await navigateWithProfile(page, persona, '/');
 
     if (persona.tourPages) {
       console.log(`[${persona.id}] Touring the site before buying`);
       for (const path of persona.tourPages) {
-        await page.goto(buildPageUrl(path, persona), { waitUntil: 'domcontentloaded' });
+        await navigateWithProfile(page, persona, path);
         await think(persona, `Browsing ${path}`);
       }
     }
@@ -148,7 +169,7 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
     if (persona.wander) {
       console.log(`[${persona.id}] Wandering between pages`);
       for (const path of persona.wanderPages) {
-        await page.goto(buildPageUrl(path, persona), { waitUntil: 'domcontentloaded' });
+        await navigateWithProfile(page, persona, path);
         await think(persona, `Looking around ${path}`);
       }
     }
@@ -158,7 +179,7 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
       console.log(`[${persona.id}] Adding ${step.quantity} ${step.product}${step.quantity > 1 ? 's' : ''} to cart`);
 
       for (let index = 0; index < step.quantity; index += 1) {
-        await page.goto(buildPageUrl(targetPath, persona), { waitUntil: 'domcontentloaded' });
+        await navigateWithProfile(page, persona, targetPath);
         await think(persona, `Considering ${step.product}`);
         page.once('dialog', async dialog => {
           console.log(`[${persona.id}] Dialog: ${dialog.message()}`);
@@ -170,13 +191,13 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
 
     if (persona.abandonAt === 'cart') {
       console.log(`[${persona.id}] Getting distracted and leaving the flow at the cart`);
-      await page.goto(buildPageUrl('/cart.html', persona), { waitUntil: 'domcontentloaded' });
+      await navigateWithProfile(page, persona, '/cart.html');
       await think(persona, 'Checking the cart and then leaving');
       return;
     }
 
     console.log(`[${persona.id}] Going to the cart`);
-    await page.goto(buildPageUrl('/cart.html', persona), { waitUntil: 'domcontentloaded' });
+    await navigateWithProfile(page, persona, '/cart.html');
     await think(persona, 'Reviewing cart before checkout');
     await page.getByRole('button', { name: 'Proceed to checkout' }).click();
 
