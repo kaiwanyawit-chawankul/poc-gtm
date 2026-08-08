@@ -16,17 +16,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 1. Enable Corepack first so the pnpm command is available
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      # 2. Setup Node and configure caching now that pnpm exists
       - name: Setup Node.js and pnpm
         uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'pnpm'
           cache-dependency-path: tests/pnpm-lock.yaml
-
-      - name: Enable Corepack and activate pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
 
       - name: Install dependencies
         run: pnpm install
