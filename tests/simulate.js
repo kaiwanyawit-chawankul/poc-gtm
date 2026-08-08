@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
-
+const { createTonyPersona } = require('./tony');
 const baseUrl = 'https://poc-gtm-nu.vercel.app';
 const screenshotsDir = path.join(__dirname, 'screenshots');
 fs.mkdirSync(screenshotsDir, { recursive: true });
@@ -11,6 +11,9 @@ const MAX_CONCURRENT_USERS = 3;
 const GTM_STORAGE_KEYS = ['gtmPersonaId', 'gtmPersonaName', 'gtmPlanCount', 'gtmEmailDomain', 'gtmUserId'];
 
 const personas = [
+  {
+    id: 'tony',
+  },
   {
     id: 'alex',
     name: 'Alex Chen',
@@ -174,13 +177,16 @@ async function think(persona, label) {
 }
 
 // Visual Anchor: Browser instance shared via argument injection
-async function simulateUser(browser, persona, startDelayMs = 0) {
+async function simulateUser(browser, personaTemplate, startDelayMs = 0) {
+  // Deep clone and add a unique instance ID to prevent duplicate persona conflicts
+  const instanceId = `${personaTemplate.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  const persona = { ...personaTemplate, id: instanceId };
+
   if (startDelayMs > 0) {
     console.log(`[${persona.id}] Queued: Arriving after ${startDelayMs}ms`);
     await new Promise(resolve => setTimeout(resolve, startDelayMs));
   }
 
-  // Context isolation keeps individual logins, sessions, and cookies clean
   const context = await browser.newContext({
     viewport: persona.viewport,
     userAgent: persona.userAgent,
@@ -188,6 +194,12 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
   });
 
   const page = await context.newPage();
+
+  // Handle alerts globally for this page session to prevent unhandled dialog freezes
+  page.on('dialog', async dialog => {
+    console.log(`[${persona.id}] Dialog encountered: ${dialog.message()}`);
+    await dialog.accept();
+  });
 
   try {
     console.log(`\n[${persona.id}] Starting simulation for ${persona.name}`);
@@ -218,13 +230,12 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
       console.log(`[${persona.id}] Adding ${step.quantity} ${step.product}${step.quantity > 1 ? 's' : ''} to cart`);
 
       for (let index = 0; index < step.quantity; index += 1) {
-        await navigateWithProfile(page, persona, targetPath);
+        // Optimize: Only navigate if we aren't already on the correct product page
+        if (!page.url().includes(targetPath)) {
+          await navigateWithProfile(page, persona, targetPath);
+        }
         await think(persona, `Considering ${step.product}`);
-        page.once('dialog', async dialog => {
-          console.log(`[${persona.id}] Dialog: ${dialog.message()}`);
-          await dialog.accept();
-        });
-        await page.getByRole('button', { name: 'Add to cart' }).click();
+        await page.getByRole('button', { name: 'Add to cart' }).click({ timeout: 5000 });
       }
     }
 
@@ -245,7 +256,7 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
     console.log(`[${persona.id}] Going to the cart`);
     await navigateWithProfile(page, persona, '/cart.html');
     await think(persona, 'Reviewing cart before checkout');
-    await page.getByRole('button', { name: 'Proceed to checkout' }).click();
+    await page.getByRole('button', { name: 'Proceed to checkout' }).click({ timeout: 5000 });
 
     console.log(`[${persona.id}] Filling out checkout details`);
     await think(persona, 'Filling in contact details');
@@ -255,24 +266,28 @@ async function simulateUser(browser, persona, startDelayMs = 0) {
 
     console.log(`[${persona.id}] Completing purchase`);
     await think(persona, 'Submitting the order');
-    await page.getByRole('button', { name: 'Complete purchase' }).click();
+    await page.getByRole('button', { name: 'Complete purchase' }).click({ timeout: 5000 });
+
+    // Explicitly wait for navigation to complete to ensure the transaction ID exists in the URL
+    await page.waitForURL('**/checkout.html**', { timeout: 7000 }).catch(() => {});
 
     const confirmationUrl = page.url();
-    const transactionId = new URL(confirmationUrl).searchParams.get('transactionId');
+    const transactionId = new URL(confirmationUrl).searchParams.get('transactionId') || 'N/A';
     console.log(`[${persona.id}] Confirmation URL: ${confirmationUrl}`);
     console.log(`[${persona.id}] Transaction ID: ${transactionId}`);
 
-    console.log(`[${persona.id}] Saving screenshot`);
-    await page.screenshot({ path: path.join(screenshotsDir, `checkout_simulation_${persona.id}.png`), fullPage: true });
+    console.log(`[${persona.id}] Saving confirmation screenshot`);
+    await page.screenshot({ path: path.join(screenshotsDir, `checkout_success_${persona.id}.png`), fullPage: true });
   } catch (error) {
-    console.error(`[${persona.id}] Simulation failed:`, error);
-    await page.screenshot({ path: path.join(screenshotsDir, `simulation_error_${persona.id}.png`), fullPage: true });
+    console.error(`[${persona.id}] Simulation failed:`, error.message);
+    await page.screenshot({ path: path.join(screenshotsDir, `error_${persona.id}.png`), fullPage: true }).catch(() => {});
   } finally {
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(500);
     await context.close();
-    console.log(`[${persona.id}] Session closed context.`);
+    console.log(`[${persona.id}] Session closed context cleanly.`);
   }
 }
+
 
 // Visual Anchor: Worker pool execution loop to enforce maximum active windows
 async function runWithConcurrencyLimit(browser, tasks) {
@@ -302,7 +317,15 @@ async function runWithConcurrencyLimit(browser, tasks) {
   for (let i = 0; i < dailyVisitCount; i++) {
     const randomIndex = Math.floor(Math.random() * personas.length);
     // Deep clone the persona object if you plan to modify properties per session
-    selectedPersonas.push({ ...personas[randomIndex] });
+    //selectedPersonas.push({ ...personas[randomIndex] });
+
+    const chosenBase = personas[randomIndex];
+    if (chosenBase.id === 'tony') {
+      // Generate a brand new randomized Tony variant
+      selectedPersonas.push(createTonyPersona());
+    } else {
+      selectedPersonas.push({ ...chosenBase });
+    }
   }
 
   const arrivalOffsets = selectedPersonas.map(() => Math.floor(Math.random() * 8000));
