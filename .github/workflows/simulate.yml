@@ -10,28 +10,20 @@ on:
 jobs:
   run-simulate:
     name: Run simulate.js
-    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-focal
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 1. Enable Corepack first so the pnpm command is available
-      - name: Enable Corepack
+      - name: Enable Corepack and activate pnpm
         run: |
           corepack enable
           corepack prepare pnpm@latest --activate
 
-      # 2. Setup Node and configure caching now that pnpm exists
-      - name: Setup Node.js and pnpm
-        uses: actions/setup-node@v5
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: tests/pnpm-lock.yaml
-
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
         working-directory: tests
 
       - name: Run simulation
