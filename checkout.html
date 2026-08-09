@@ -118,7 +118,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 if (shippingComplete) {
                     shippingEventSent = true;
                     window.dataLayer.push({
-                        event: 'add_shipping',
+                        event: 'add_shipping_info',
                         ecommerce: {
                             currency: 'USD',
                             items: buildItemData(),
@@ -135,7 +135,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 if (!paymentEventSent) {
                     paymentEventSent = true;
                     window.dataLayer.push({
-                        event: 'add_payment',
+                        event: 'add_payment_info',
                         ecommerce: {
                             currency: 'USD',
                             items: buildItemData(),
