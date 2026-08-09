@@ -179,7 +179,8 @@ async function think(persona, label) {
 // Visual Anchor: Browser instance shared via argument injection
 async function simulateUser(browser, personaTemplate, startDelayMs = 0) {
   // Deep clone and add a unique instance ID to prevent duplicate persona conflicts
-  const instanceId = `${personaTemplate.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  //const instanceId = `${personaTemplate.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  const instanceId = `${personaTemplate.id}`;
   const persona = { ...personaTemplate, id: instanceId };
 
   if (startDelayMs > 0) {
